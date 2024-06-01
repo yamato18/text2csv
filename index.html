@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEXT2CSV</title>
+</head>
+<body>
+    <h1>LTSpiceのテキストファイルをCSVに変換するやつ</h1>
+    <input type="file" id="fileInput" accept=".txt">
+    <br><br>
+    <button onclick="convertFile()">CSVに変更</button>
+    <br><br>
+    <a id="downloadLink" style="display: none;">CSVをダウンロード</a>
+    <p id="note"></p>
+
+    <script>
+        function convertFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("ファイルを選択してください");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.readAsText(file, 'shift-jis');
+            reader.onload = function(event) {
+                const text = event.target.result;
+                const datalist = text.split('\n');
+                const csvRows = [['A', 'B', 'C']];
+
+                for (let i = 1; i < datalist.length; i++) {
+                    const e = datalist[i].trim();
+                    if (e) {
+                        const v = e.split('\t');
+                        const freq = parseFloat(v[0]);
+                        const V = v[1].replace(/[()]/g, '').split(',');
+                        const V1 = parseFloat(V[0].replace('dB', ''));
+                        const V2 = parseFloat(V[1].replace('ｰ', ''));
+                        csvRows.push([freq, V1, V2]);
+                    }
+                }
+
+                const inputFileName = file.name;
+                const outputFileName = inputFileName.replace(/\.txt$/i, '.csv');
+
+                const csvContent = csvRows.map(row => row.join(',')).join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = url;
+                downloadLink.download = outputFileName;
+                downloadLink.style.display = 'block';
+                downloadLink.textContent = 'CSVをダウンロード';
+
+                const note = document.getElementById("note");
+                note.innerText = "※行名がA, B, Cとなってるので変更してください。\n※変換をやり直すときは再読み込みしてください。";
+            };
+        }
+    </script>
+</body>
+</html>
